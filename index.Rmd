@@ -1,0 +1,123 @@
+---
+title: "Predicting Weight Lifting Quality from Movement Measurements"
+author: "Ivy Woo"
+date: "23 January, 2021"
+output: 
+  bookdown::html_document2: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style type="text/css">
+h1.title {
+  font-size: 31px;
+  color: DarkBlue;
+}
+h1 { /* Header 1 */
+  font-size: 25px;
+}
+h2 { /* Header 2 */
+    font-size: 21px;
+}
+h4 { /* Author, Date */
+    font-size: 15px;
+}
+</style>
+
+
+# Overview
+
+Human activity recognition research has traditionally focused on predicting *which* activity was performed, but rarely investigate *how (well)* an activity was performed. 
+This project, as oppose to tradition, attempts to predict the quality of weight lifting exercise, using quantitative data on the movements of participants and the dumbbell.
+
+
+# Summary on Experiment and Dataset
+
+The dataset used in this project is contributed by [1].
+
+Six participants were asked to perform 10 repetitions of a weight lifting exercise in five different fashions, denoted by classes 'A', 'B', 'C', 'D' and 'E', where 'A' is exercising exactly according to the specification and the other four represent exercising with four different common mistakes. Accelerometers were mounted to the participants' glove, armband, lumbar belt and the dumbbell to measure the movements of the forearm, arm, waist and dumbbell respectively.
+
+The dataset consists of 19622 observations of 160 variables. 
+Among the variables, 152 are measurements taken by the accelerometers, and the variable 'classe' classifies the five different fashions of exercising ('A', 'B', 'C', 'D', 'E').
+
+For details on the design of experiment and the dataset refer to the original paper [1].
+
+
+# Building Model
+
+## Training and test sets
+
+The dataset is divided into a training set (80\%) and a test set (20\%). 
+
+## Filtering out variables with sparse data
+
+Among the 152 variables with accelerometer measurements, some consist of a large amount of *NA* values or empty strings. While these variables might possibly have predictive power, the frequent absence of data not only make them incapable of predicting most outcomes, but also hinder the model training process due to the extra *NA*-treatments required. 
+To streamline the training process, we exclude the columns of which over 50\% are *NA*'s or empty strings in the training set, so that in the filtered training set there remains only 53 variables (52 measurements + 'classe').
+
+## Model candidates
+
+Several classification models are to be considered: random forest, gradient boosting machine (GBM) and linear discriminant analysis (LDA).
+
+## Cross validation
+
+A 5-fold cross validation is conducted on each of the candidates for two purposes:
+
+1) to pick the most suitable model among the candidates, which is the one with the highest in-sample accuracy, and
+
+2) to determine the most relevant variables for prediction.
+
+The following is the accuracy of each of the three candidates on the five resamples
+(the same seed is set for all candidates so that the resamples are the same):
+
+**Random forest**
+
+```{r, echo=FALSE}
+library(utils)
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+load("results.Rda")
+modRFcv$resample
+```
+
+**Gradient boosting machine**
+
+```{r, echo=FALSE}
+modGBMcv$resample
+```
+
+**Linear discriminant analysis**
+
+```{r, echo=FALSE}
+modLDAcv$resample
+```
+
+As shown, the random forest method results in the highest accuracy (closely followed by GBM while LDA performs significantly worse), therefore it will be used for training our final model.
+
+The gini importance of each variable in the random forest cross validation is then read.
+We include only those having an importance of at least 10\% as the predictors in our final model. Result shows that 19 variables satisfy this criterion (see Figure \@ref(fig:gini) in the appendix for a chart of the importance of the 52 measurement variables from the cross validation).
+
+
+# Final Model
+
+The final model is trained using the random forest method, with 25 bootstrap resamples and with the 19 most important variables as predictors. The trained model consists of 500 trees with 2 variables being tried at each split. The average accuracy on predicting the exercising fashion on the 25 resamples is 98.87\%. The out-of-bag (OOB) estimate of error rate is 0.73\%.
+
+## Expected out-of-sample error
+
+The trained model is employed on the test set to obtain an estimate of the out-of-sample error, which is shown to be 0.6628\%. Below is the confusion matrix of the test result.
+
+```{r, echo=FALSE}
+conM$table
+```
+
+
+# Reference {-}
+
+[1] Velloso, E., Bulling, A., Gellersen, H., Ugulino, W., \& Fuks, H. (2013, March). Qualitative activity recognition of weight lifting exercises. In Proceedings of the 4th Augmented Human International Conference (pp. 116-123).
+
+
+# Appendix {-}
+
+```{r gini, echo=FALSE, fig.align='center', fig.height=10, fig.width=8, fig.cap="Gini importance of the 52 predictors in the random forest cross validation."}
+plot(RFvarimp, main="Gini Importance of Variables")
+```
