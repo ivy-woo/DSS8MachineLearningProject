@@ -5,6 +5,7 @@ data <- read.csv("pml-training.csv")
 
 
 #divide data into training and test sets
+library(caret)
 set.seed(198)
 inTrain <- createDataPartition(data$classe, p=0.8)[[1]]
 training <- data[inTrain,]
