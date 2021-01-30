@@ -1,6 +1,6 @@
 # DSS8MachineLearningProject
 
-This is a repo for the course Practical Machine Learning on Coursera, the 8th course from the Data Science Specialization.
+This is a repo for the course Practical Machine Learning on Coursera, the 8th course from the [Data Science Specialization](https://www.coursera.org/specializations/jhu-data-science).
 
 Here you find three files:
 
